@@ -2,15 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { X } from "lucide-react";
 import Confetti from "react-confetti";
 
 interface OTPVerificationProps {
   onSuccess: () => void;
   onClose: () => void;
+  phone: string;
 }
 
-const OTPVerification = ({ onSuccess, onClose }: OTPVerificationProps) => {
+const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
@@ -28,7 +30,7 @@ const OTPVerification = ({ onSuccess, onClose }: OTPVerificationProps) => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otpValue = otp.join("");
     
     if (otpValue.length !== 6) {
@@ -40,15 +42,43 @@ const OTPVerification = ({ onSuccess, onClose }: OTPVerificationProps) => {
       return;
     }
 
-    setShowConfetti(true);
-    toast({
-      title: "Verification Successful!",
-      description: "Welcome to Raya IT ATM Services",
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          phone,
+          otp: otpValue,
+        },
+      });
 
-    setTimeout(() => {
-      onSuccess();
-    }, 2000);
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        setShowConfetti(true);
+        toast({
+          title: "Verification Successful!",
+          description: "Welcome to Raya IT ATM Services",
+        });
+
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+      } else {
+        toast({
+          title: "Invalid OTP",
+          description: "The code you entered is incorrect",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Verification error:', error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Failed to verify OTP. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

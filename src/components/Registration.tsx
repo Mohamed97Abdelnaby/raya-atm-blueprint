@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, User, CreditCard, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import OTPVerification from "./OTPVerification";
 
 const Registration = () => {
@@ -18,7 +19,7 @@ const Registration = () => {
     email: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.phone || !formData.nationalId || !formData.email) {
@@ -30,11 +31,50 @@ const Registration = () => {
       return;
     }
 
-    toast({
-      title: "OTP Sent",
-      description: "Check your WhatsApp for verification code",
-    });
-    setShowOTP(true);
+    try {
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Register user in database
+      const { error: registerError } = await supabase.functions.invoke('register-user', {
+        body: {
+          name: formData.name,
+          phone: formData.phone,
+          nationalId: formData.nationalId,
+          email: formData.email,
+          otp,
+        },
+      });
+
+      if (registerError) {
+        throw registerError;
+      }
+
+      // Send OTP via WhatsApp
+      const { error: otpError } = await supabase.functions.invoke('send-otp', {
+        body: {
+          phone: formData.phone,
+          otp,
+        },
+      });
+
+      if (otpError) {
+        throw otpError;
+      }
+
+      toast({
+        title: "OTP Sent",
+        description: "Check your WhatsApp for verification code",
+      });
+      setShowOTP(true);
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleOTPSuccess = () => {
@@ -126,7 +166,7 @@ const Registration = () => {
         </p>
       </div>
 
-      {showOTP && <OTPVerification onSuccess={handleOTPSuccess} onClose={() => setShowOTP(false)} />}
+      {showOTP && <OTPVerification onSuccess={handleOTPSuccess} onClose={() => setShowOTP(false)} phone={formData.phone} />}
     </div>
   );
 };

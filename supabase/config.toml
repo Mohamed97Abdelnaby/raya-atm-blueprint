@@ -1,1 +1,10 @@
 project_id = "yoasbrxspyqjmwyoqmgr"
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.register-user]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
