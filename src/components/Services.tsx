@@ -53,17 +53,17 @@ const Services = () => {
           <div className="flex gap-4">
             <button
               onClick={() => navigate("/history")}
-              className="flex-1 p-4 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+              className="flex-1 p-4 rounded-lg bg-gradient-to-br from-primary to-secondary text-white hover:scale-105 transition-all"
             >
-              <History className="h-6 w-6 mb-2 text-primary" />
-              <p className="text-sm font-medium text-foreground">History</p>
+              <History className="h-6 w-6 mb-2 mx-auto" />
+              <p className="text-sm font-medium">History</p>
             </button>
             <button
               onClick={() => navigate("/profile")}
-              className="flex-1 p-4 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+              className="flex-1 p-4 rounded-lg bg-gradient-to-br from-primary to-secondary text-white hover:scale-105 transition-all"
             >
-              <User className="h-6 w-6 mb-2 text-primary" />
-              <p className="text-sm font-medium text-foreground">Profile</p>
+              <User className="h-6 w-6 mb-2 mx-auto" />
+              <p className="text-sm font-medium">Profile</p>
             </button>
           </div>
         </Card>
