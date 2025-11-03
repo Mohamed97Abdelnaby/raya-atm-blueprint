@@ -15,8 +15,7 @@ const Services = () => {
     {
       title: "Deposit",
       icon: ArrowUpFromLine,
-      gradient: "from-muted to-background",
-      border: true,
+      gradient: "from-primary to-secondary",
       path: "/deposit",
     },
   ];
@@ -38,7 +37,7 @@ const Services = () => {
                 service.gradient
                   ? `bg-gradient-to-br ${service.gradient} text-white`
                   : "bg-muted"
-              } ${service.border ? "border-2 border-primary" : ""}`}
+              }`}
             >
               <service.icon className="h-12 w-12 mb-4" />
               <h2 className="text-2xl font-bold">{service.title}</h2>
