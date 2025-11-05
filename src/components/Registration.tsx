@@ -32,12 +32,15 @@ const Registration = () => {
     try {
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Combine country code with phone number
+      const fullPhone = `+20${formData.phone}`;
 
       // Register user in database
       const { error: registerError } = await supabase.functions.invoke('register-user', {
         body: {
           name: formData.name,
-          phone: formData.phone,
+          phone: fullPhone,
           otp,
         },
       });
@@ -49,7 +52,7 @@ const Registration = () => {
       // Send OTP via WhatsApp
       const { error: otpError } = await supabase.functions.invoke('send-otp', {
         body: {
-          phone: formData.phone,
+          phone: fullPhone,
           otp,
         },
       });
@@ -105,13 +108,18 @@ const Registration = () => {
             <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <div className="absolute left-10 top-3 text-muted-foreground font-medium">+20</div>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+20 123 456 7890"
+                placeholder="123 456 7890"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="pl-10 border-border focus-visible:ring-primary"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  setFormData({ ...formData, phone: value });
+                }}
+                className="pl-20 border-border focus-visible:ring-primary"
+                maxLength={10}
               />
             </div>
           </div>
@@ -123,7 +131,7 @@ const Registration = () => {
         </form>
       </div>
 
-      {showOTP && <OTPVerification onSuccess={handleOTPSuccess} onClose={() => setShowOTP(false)} phone={formData.phone} />}
+      {showOTP && <OTPVerification onSuccess={handleOTPSuccess} onClose={() => setShowOTP(false)} phone={`+20${formData.phone}`} />}
     </div>
   );
 };
