@@ -121,16 +121,6 @@ const Registration = () => {
             Send OTP
           </Button>
         </form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Already registered?{" "}
-          <button
-            onClick={() => navigate("/login")}
-            className="text-primary underline hover:text-primary/80"
-          >
-            Login
-          </button>
-        </p>
       </div>
 
       {showOTP && <OTPVerification onSuccess={handleOTPSuccess} onClose={() => setShowOTP(false)} phone={formData.phone} />}
