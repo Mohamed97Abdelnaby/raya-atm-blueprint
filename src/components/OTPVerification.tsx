@@ -55,6 +55,9 @@ const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) =>
       }
 
       if (data?.success) {
+        // Store user phone in localStorage for future use
+        localStorage.setItem("user_phone", phone);
+        
         setShowConfetti(true);
         toast({
           title: "Verification Successful!",

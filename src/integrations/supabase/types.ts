@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          atm_number: string | null
+          created_at: string
+          description: string | null
+          id: string
+          reference_number: string | null
+          status: string
+          transaction_type: string
+          updated_at: string
+          user_phone: string
+        }
+        Insert: {
+          amount: number
+          atm_number?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string
+          user_phone: string
+        }
+        Update: {
+          amount?: number
+          atm_number?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string
+          user_phone?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
