@@ -9,8 +9,6 @@ const corsHeaders = {
 interface RegisterRequest {
   name: string;
   phone: string;
-  nationalId: string;
-  email: string;
   otp: string;
 }
 
@@ -20,9 +18,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, phone, nationalId, email, otp }: RegisterRequest = await req.json();
+    const { name, phone, otp }: RegisterRequest = await req.json();
 
-    console.log('Registering user:', { name, phone, email });
+    console.log('Registering user:', { name, phone });
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -35,8 +33,6 @@ const handler = async (req: Request): Promise<Response> => {
       .insert({
         name,
         phone,
-        national_id: nationalId,
-        email,
         otp,
         otp_verified: false,
       })

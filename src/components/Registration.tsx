@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, User, CreditCard, Mail } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import OTPVerification from "./OTPVerification";
 
@@ -15,14 +15,12 @@ const Registration = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    nationalId: "",
-    email: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.phone || !formData.nationalId || !formData.email) {
+    if (!formData.name || !formData.phone) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields",
@@ -40,8 +38,6 @@ const Registration = () => {
         body: {
           name: formData.name,
           phone: formData.phone,
-          nationalId: formData.nationalId,
-          email: formData.email,
           otp,
         },
       });
@@ -120,35 +116,6 @@ const Registration = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="nationalId" className="text-foreground">National ID</Label>
-            <div className="relative">
-              <CreditCard className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="nationalId"
-                type="text"
-                placeholder="Enter your ID number"
-                value={formData.nationalId}
-                onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
-                className="pl-10 border-border focus-visible:ring-primary"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">Email Address</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="pl-10 border-border focus-visible:ring-primary"
-              />
-            </div>
-          </div>
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
             Send OTP

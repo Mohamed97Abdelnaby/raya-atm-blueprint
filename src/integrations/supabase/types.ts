@@ -17,10 +17,10 @@ export type Database = {
       registrations: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           id: string
           name: string
-          national_id: string
+          national_id: string | null
           otp: string | null
           otp_verified: boolean | null
           phone: string
@@ -28,10 +28,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           id?: string
           name: string
-          national_id: string
+          national_id?: string | null
           otp?: string | null
           otp_verified?: boolean | null
           phone: string
@@ -39,10 +39,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
           name?: string
-          national_id?: string
+          national_id?: string | null
           otp?: string | null
           otp_verified?: boolean | null
           phone?: string
