@@ -12,6 +12,7 @@ const Registration = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showOTP, setShowOTP] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -30,40 +31,30 @@ const Registration = () => {
     }
 
     try {
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Combine country code with phone number
-      const fullPhone = `+20${formData.phone}`;
-
-      // Register user in database
-      const { error: registerError } = await supabase.functions.invoke('register-user', {
-        body: {
-          name: formData.name,
-          phone: fullPhone,
-          otp,
+      // Call the API endpoint
+      const response = await fetch('https://172.121.40.231:8443/api/Home/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          fullName: formData.name,
+          phoneNumber: formData.phone,
+        }),
       });
 
-      if (registerError) {
-        throw registerError;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Send OTP via WhatsApp
-      const { error: otpError } = await supabase.functions.invoke('send-otp', {
-        body: {
-          phone: fullPhone,
-          otp,
-        },
-      });
+      const data = await response.json();
 
-      if (otpError) {
-        throw otpError;
-      }
+      // Store userId for later use
+      setUserId(data.userId);
 
       toast({
         title: "OTP Sent",
-        description: "Check your WhatsApp for verification code",
+        description: data.message || "Check your phone for verification code",
       });
       setShowOTP(true);
     } catch (error: any) {
