@@ -9,17 +9,9 @@ import { ArrowLeft, QrCode, Check } from "lucide-react";
 const WithdrawFlow = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<"scan" | "amount" | "confirm" | "success">("scan");
+  const [step, setStep] = useState<"amount" | "confirm" | "scan" | "success">("amount");
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("Main Account ****1234");
-
-  const handleScan = () => {
-    toast({
-      title: "ATM Linked",
-      description: "Successfully connected to ATM #4521",
-    });
-    setStep("amount");
-  };
 
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -34,46 +26,35 @@ const WithdrawFlow = () => {
   };
 
   const handleConfirm = () => {
-    setStep("success");
+    setStep("scan");
+  };
+
+  const handleScan = () => {
     toast({
       title: "Withdrawal Successful",
       description: `EGP ${amount} has been withdrawn`,
     });
+    setStep("success");
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="bg-primary text-primary-foreground p-6 flex items-center gap-4">
-        <button onClick={() => step === "scan" ? navigate("/services") : setStep("scan")}>
+      <header className="bg-gradient-to-r from-primary to-secondary text-white p-6 flex items-center gap-4">
+        <button onClick={() => step === "amount" ? navigate("/services") : setStep("amount")}>
           <ArrowLeft className="h-6 w-6" />
         </button>
         <div>
           <h1 className="text-xl font-bold">Withdraw Cash</h1>
           <p className="text-sm opacity-90">
-            {step === "scan" && "Scan ATM QR Code"}
             {step === "amount" && "Enter Amount"}
-            {step === "confirm" && "Confirm Transaction"}
-            {step === "success" && "Transaction Complete"}
+            {step === "confirm" && "Review Transaction"}
+            {step === "scan" && "Scan ATM QR Code"}
+            {step === "success" && "Withdrawal Complete"}
           </p>
         </div>
       </header>
 
       <main className="p-6 animate-fade-in">
-        {step === "scan" && (
-          <Card className="p-8 text-center space-y-6">
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center">
-              <QrCode className="h-32 w-32 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground mb-2">Position QR Code</h2>
-              <p className="text-muted-foreground">Align the QR code within the frame</p>
-            </div>
-            <Button onClick={handleScan} className="w-full bg-primary text-primary-foreground">
-              Simulate Scan
-            </Button>
-          </Card>
-        )}
-
         {step === "amount" && (
           <Card className="p-8 space-y-6">
             <div>
@@ -134,8 +115,23 @@ const WithdrawFlow = () => {
               </div>
             </div>
 
-            <Button onClick={handleConfirm} className="w-full bg-primary text-primary-foreground">
-              Confirm Withdrawal
+            <Button onClick={handleConfirm} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
+              Continue to ATM
+            </Button>
+          </Card>
+        )}
+
+        {step === "scan" && (
+          <Card className="p-8 text-center space-y-6">
+            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center">
+              <QrCode className="h-32 w-32 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Scan ATM QR Code</h2>
+              <p className="text-muted-foreground">Align the QR code to complete withdrawal</p>
+            </div>
+            <Button onClick={handleScan} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
+              Simulate Scan
             </Button>
           </Card>
         )}

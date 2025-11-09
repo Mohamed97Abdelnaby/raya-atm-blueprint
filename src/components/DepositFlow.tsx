@@ -9,16 +9,8 @@ import { ArrowLeft, QrCode, Check, DollarSign } from "lucide-react";
 const DepositFlow = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<"scan" | "amount" | "confirm" | "success">("scan");
+  const [step, setStep] = useState<"amount" | "confirm" | "scan" | "success">("amount");
   const [amount, setAmount] = useState("");
-
-  const handleScan = () => {
-    toast({
-      title: "ATM Linked",
-      description: "Successfully connected to ATM #4521",
-    });
-    setStep("amount");
-  };
 
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -33,46 +25,35 @@ const DepositFlow = () => {
   };
 
   const handleConfirm = () => {
-    setStep("success");
+    setStep("scan");
+  };
+
+  const handleScan = () => {
     toast({
       title: "Deposit Successful",
       description: `EGP ${amount} has been deposited`,
     });
+    setStep("success");
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-gradient-to-r from-primary to-secondary text-white p-6 flex items-center gap-4">
-        <button onClick={() => step === "scan" ? navigate("/services") : setStep("scan")}>
+        <button onClick={() => step === "amount" ? navigate("/services") : setStep("amount")}>
           <ArrowLeft className="h-6 w-6" />
         </button>
         <div>
           <h1 className="text-xl font-bold">Deposit Cash</h1>
           <p className="text-sm opacity-90">
-            {step === "scan" && "Scan ATM QR Code"}
             {step === "amount" && "Enter Amount"}
             {step === "confirm" && "Insert Cash"}
+            {step === "scan" && "Scan ATM QR Code"}
             {step === "success" && "Deposit Complete"}
           </p>
         </div>
       </header>
 
       <main className="p-6 animate-fade-in">
-        {step === "scan" && (
-          <Card className="p-8 text-center space-y-6">
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center">
-              <QrCode className="h-32 w-32 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground mb-2">Position QR Code</h2>
-              <p className="text-muted-foreground">Align the QR code within the frame</p>
-            </div>
-            <Button onClick={handleScan} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Simulate Scan
-            </Button>
-          </Card>
-        )}
-
         {step === "amount" && (
           <Card className="p-8 space-y-6">
             <div className="text-center">
@@ -114,7 +95,22 @@ const DepositFlow = () => {
             </div>
 
             <Button onClick={handleConfirm} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Confirm Cash Inserted
+              Continue to ATM
+            </Button>
+          </Card>
+        )}
+
+        {step === "scan" && (
+          <Card className="p-8 text-center space-y-6">
+            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center">
+              <QrCode className="h-32 w-32 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Scan ATM QR Code</h2>
+              <p className="text-muted-foreground">Align the QR code to complete deposit</p>
+            </div>
+            <Button onClick={handleScan} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
+              Simulate Scan
             </Button>
           </Card>
         )}
