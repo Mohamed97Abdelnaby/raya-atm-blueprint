@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, QrCode, Check, DollarSign } from "lucide-react";
+import { ArrowLeft, Check, DollarSign } from "lucide-react";
+import QRScanner from "./QRScanner";
 
 const DepositFlow = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState<"amount" | "confirm" | "scan" | "success">("amount");
   const [amount, setAmount] = useState("");
+  const [qrCodeValue, setQrCodeValue] = useState<string>("");
 
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -28,12 +30,21 @@ const DepositFlow = () => {
     setStep("scan");
   };
 
-  const handleScan = () => {
+  const handleScanSuccess = (decodedText: string) => {
+    setQrCodeValue(decodedText);
     toast({
-      title: "Deposit Successful",
-      description: `EGP ${amount} has been deposited`,
+      title: "QR Code Scanned",
+      description: "ATM verified successfully",
     });
-    setStep("success");
+    
+    // Simulate processing
+    setTimeout(() => {
+      toast({
+        title: "Deposit Successful",
+        description: `EGP ${amount} has been deposited`,
+      });
+      setStep("success");
+    }, 1000);
   };
 
   return (
@@ -101,18 +112,10 @@ const DepositFlow = () => {
         )}
 
         {step === "scan" && (
-          <Card className="p-8 text-center space-y-6">
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center">
-              <QrCode className="h-32 w-32 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground mb-2">Scan ATM QR Code</h2>
-              <p className="text-muted-foreground">Align the QR code to complete deposit</p>
-            </div>
-            <Button onClick={handleScan} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Simulate Scan
-            </Button>
-          </Card>
+          <QRScanner 
+            onScanSuccess={handleScanSuccess}
+            onClose={() => setStep("confirm")}
+          />
         )}
 
         {step === "success" && (
@@ -124,6 +127,11 @@ const DepositFlow = () => {
               <h2 className="text-2xl font-bold text-foreground mb-2">Deposit Successful!</h2>
               <p className="text-3xl font-bold text-primary">EGP {amount}</p>
             </div>
+            {qrCodeValue && (
+              <div className="text-sm text-muted-foreground">
+                <p>ATM ID: {qrCodeValue.substring(0, 20)}{qrCodeValue.length > 20 ? '...' : ''}</p>
+              </div>
+            )}
             <p className="text-muted-foreground">
               Your deposit has been processed successfully
             </p>

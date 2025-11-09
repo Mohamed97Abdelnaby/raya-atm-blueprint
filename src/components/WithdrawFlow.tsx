@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, QrCode, Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
+import QRScanner from "./QRScanner";
 
 const WithdrawFlow = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const WithdrawFlow = () => {
   const [step, setStep] = useState<"amount" | "confirm" | "scan" | "success">("amount");
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("Main Account ****1234");
+  const [qrCodeValue, setQrCodeValue] = useState<string>("");
 
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -29,12 +31,21 @@ const WithdrawFlow = () => {
     setStep("scan");
   };
 
-  const handleScan = () => {
+  const handleScanSuccess = (decodedText: string) => {
+    setQrCodeValue(decodedText);
     toast({
-      title: "Withdrawal Successful",
-      description: `EGP ${amount} has been withdrawn`,
+      title: "QR Code Scanned",
+      description: "ATM verified successfully",
     });
-    setStep("success");
+    
+    // Simulate processing
+    setTimeout(() => {
+      toast({
+        title: "Withdrawal Successful",
+        description: `EGP ${amount} has been withdrawn`,
+      });
+      setStep("success");
+    }, 1000);
   };
 
   return (
@@ -122,18 +133,10 @@ const WithdrawFlow = () => {
         )}
 
         {step === "scan" && (
-          <Card className="p-8 text-center space-y-6">
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-secondary to-primary rounded-2xl flex items-center justify-center">
-              <QrCode className="h-32 w-32 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground mb-2">Scan ATM QR Code</h2>
-              <p className="text-muted-foreground">Align the QR code to complete withdrawal</p>
-            </div>
-            <Button onClick={handleScan} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Simulate Scan
-            </Button>
-          </Card>
+          <QRScanner 
+            onScanSuccess={handleScanSuccess}
+            onClose={() => setStep("confirm")}
+          />
         )}
 
         {step === "success" && (
@@ -145,6 +148,11 @@ const WithdrawFlow = () => {
               <h2 className="text-2xl font-bold text-foreground mb-2">Withdrawal Successful!</h2>
               <p className="text-3xl font-bold text-primary">EGP {amount}</p>
             </div>
+            {qrCodeValue && (
+              <div className="text-sm text-muted-foreground">
+                <p>ATM ID: {qrCodeValue.substring(0, 20)}{qrCodeValue.length > 20 ? '...' : ''}</p>
+              </div>
+            )}
             <p className="text-muted-foreground">
               Please collect your cash from the ATM
             </p>
