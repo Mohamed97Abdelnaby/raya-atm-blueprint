@@ -6,23 +6,30 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, DollarSign, Loader2 } from "lucide-react";
 import QRScanner from "./QRScanner";
-import { supabase } from "@/integrations/supabase/client";
 
 const DepositFlow = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState<"amount" | "scan" | "insertCash" | "confirm" | "success">("scan");
   const [qrCodeValue, setQrCodeValue] = useState<string>("");
-  const [transactionId, setTransactionId] = useState<string>("");
   const [totalCash, setTotalCash] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [userPhone, setUserPhone] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
-    // Get user phone from localStorage or session
-    const phone = localStorage.getItem('userPhone') || '+201092348204'; // Fallback for testing
-    setUserPhone(phone);
-  }, []);
+    // Get userId from localStorage
+    const id = localStorage.getItem('userId');
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please register again.",
+        variant: "destructive",
+      });
+      navigate("/");
+      return;
+    }
+    setUserId(id);
+  }, [navigate, toast]);
 
 
   const handleScanSuccess = useCallback(async (decodedText: string) => {
@@ -32,55 +39,92 @@ const DepositFlow = () => {
       description: "ATM verified successfully",
     });
     
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please register again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Start cash-in transaction
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('atm-deposit', {
-        body: {
-          action: 'STARTCASHIN',
-          amount: 0,
-          atmId: decodedText,
-          userPhone
-        }
+      const response = await fetch('https://localhost:7199/api/Home/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trans_type: "DEPST",
+          terminal_id: decodedText,
+          STATUS: "STARTCASHIN",
+          User_Id: userId,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to start deposit');
+      }
 
-      setTransactionId(data.transactionId);
+      const data = await response.json();
+
       toast({
         title: "Ready",
-        description: data.message,
+        description: data.message || "Deposit Command Sent to ATM",
       });
       setStep("insertCash");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Start deposit error:', error);
       toast({
         title: "Error",
-        description: "Failed to start transaction",
+        description: error.message || "Failed to start transaction",
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
     }
-  }, [userPhone, toast]);
+  }, [userId, toast]);
 
   const handleContinueInsert = async () => {
-    setIsProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('atm-deposit', {
-        body: {
-          action: 'CASHINSERTED',
-          transactionId
-        }
-      });
-
-      if (error) throw error;
-
-      setTotalCash(data.total_cash);
-      setStep("confirm");
-    } catch (error) {
+    if (!userId || !qrCodeValue) {
       toast({
         title: "Error",
-        description: "Failed to read cash amount",
+        description: "Missing transaction information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('https://localhost:7199/api/Home/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trans_type: "DEPST",
+          terminal_id: qrCodeValue,
+          STATUS: "CASHINSERTED",
+          User_Id: userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to read cash amount');
+      }
+
+      const data = await response.json();
+
+      setTotalCash(data.amount?.toString() || "0");
+      setStep("confirm");
+    } catch (error: any) {
+      console.error('Cash inserted error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to read cash amount",
         variant: "destructive",
       });
     } finally {
@@ -89,28 +133,46 @@ const DepositFlow = () => {
   };
 
   const handleConfirm = async () => {
+    if (!userId || !qrCodeValue) {
+      toast({
+        title: "Error",
+        description: "Missing transaction information",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('atm-deposit', {
-        body: {
-          action: 'CONFIRMED',
-          transactionId,
-          totalCash: parseFloat(totalCash),
-          userPhone
-        }
+      const response = await fetch('https://localhost:7199/api/Home/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trans_type: "DEPST",
+          terminal_id: qrCodeValue,
+          STATUS: "CONFIRMED",
+          User_Id: userId,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to confirm transaction');
+      }
+
+      const data = await response.json();
 
       toast({
         title: "Success",
-        description: data.message,
+        description: data.message || "Deposit - Confirmed",
       });
       setStep("success");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Confirm deposit error:', error);
       toast({
         title: "Error",
-        description: "Failed to confirm transaction",
+        description: error.message || "Failed to confirm transaction",
         variant: "destructive",
       });
     } finally {
@@ -119,27 +181,47 @@ const DepositFlow = () => {
   };
 
   const handleRefund = async () => {
+    if (!userId || !qrCodeValue) {
+      toast({
+        title: "Error",
+        description: "Missing transaction information",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('atm-deposit', {
-        body: {
-          action: 'REFUND',
-          transactionId
-        }
+      const response = await fetch('https://localhost:7199/api/Home/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trans_type: "DEPST",
+          terminal_id: qrCodeValue,
+          STATUS: "REFUND",
+          User_Id: userId,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to refund');
+      }
+
+      const data = await response.json();
 
       toast({
         title: "Refunded",
-        description: data.message,
+        description: data.message || "Deposit - Refunded",
       });
       setStep("scan");
       setTotalCash("");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Refund error:', error);
       toast({
         title: "Error",
-        description: "Failed to refund",
+        description: error.message || "Failed to refund",
         variant: "destructive",
       });
     } finally {
@@ -148,33 +230,45 @@ const DepositFlow = () => {
   };
 
   const handleCancel = async () => {
-    if (!transactionId) {
+    if (!qrCodeValue || !userId) {
       navigate("/services");
       return;
     }
 
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('atm-deposit', {
-        body: {
-          action: 'CANCEL',
-          transactionId
-        }
+      const response = await fetch('https://localhost:7199/api/Home/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trans_type: "DEPST",
+          terminal_id: qrCodeValue,
+          STATUS: "CANCEL",
+          User_Id: userId,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to cancel transaction');
+      }
+
+      const data = await response.json();
 
       toast({
         title: "Cancelled",
-        description: data.message,
+        description: data.message || "Deposit - Cancelled",
       });
       navigate("/services");
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Cancel error:', error);
       toast({
         title: "Error",
-        description: "Failed to cancel transaction",
+        description: error.message || "Failed to cancel transaction",
         variant: "destructive",
       });
+      navigate("/services");
     } finally {
       setIsProcessing(false);
     }
@@ -282,12 +376,11 @@ const DepositFlow = () => {
               <h2 className="text-2xl font-bold text-foreground mb-2">Deposit Successful!</h2>
               <p className="text-3xl font-bold text-primary">EGP {totalCash}</p>
             </div>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>Transaction ID: {transactionId.substring(0, 8)}...</p>
-              {qrCodeValue && (
+            {qrCodeValue && (
+              <div className="text-sm text-muted-foreground">
                 <p>ATM ID: {qrCodeValue.substring(0, 20)}{qrCodeValue.length > 20 ? '...' : ''}</p>
-              )}
-            </div>
+              </div>
+            )}
             <p className="text-muted-foreground">
               Cash stored successfully and added to your account
             </p>
