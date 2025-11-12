@@ -13,26 +13,10 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   const [error, setError] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
-  const isMounted = useRef(true);
-
-  const stopScanner = async () => {
-    if (scannerRef.current && isScanning.current) {
-      try {
-        await scannerRef.current.stop();
-        await scannerRef.current.clear();
-        scannerRef.current = null;
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
-      }
-      isScanning.current = false;
-    }
-  };
 
   useEffect(() => {
-    isMounted.current = true;
-
     const startScanner = async () => {
-      if (isScanning.current || !isMounted.current) return;
+      if (isScanning.current) return;
       
       try {
         const html5QrCode = new Html5Qrcode("qr-reader");
@@ -46,10 +30,8 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            if (isMounted.current) {
-              onScanSuccess(decodedText);
-              stopScanner();
-            }
+            onScanSuccess(decodedText);
+            stopScanner();
           },
           (errorMessage) => {
             // Ignore common scanning errors
@@ -57,9 +39,19 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           }
         );
       } catch (err) {
-        if (isMounted.current) {
-          setError("Unable to access camera. Please grant camera permissions.");
-          console.error("Error starting scanner:", err);
+        setError("Unable to access camera. Please grant camera permissions.");
+        console.error("Error starting scanner:", err);
+        isScanning.current = false;
+      }
+    };
+
+    const stopScanner = async () => {
+      if (scannerRef.current && isScanning.current) {
+        try {
+          await scannerRef.current.stop();
+          scannerRef.current.clear();
+        } catch (err) {
+          console.error("Error stopping scanner:", err);
         }
         isScanning.current = false;
       }
@@ -68,46 +60,38 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
     startScanner();
 
     return () => {
-      isMounted.current = false;
       stopScanner();
     };
   }, [onScanSuccess]);
 
   return (
-    <Card className="p-6 space-y-4 max-h-[calc(100vh-12rem)] flex flex-col">
-      <div className="flex items-center justify-between shrink-0">
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">Scan QR Code</h2>
         {onClose && (
-          <button 
-            onClick={() => {
-              stopScanner();
-              onClose();
-            }} 
-            className="text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-6 w-6" />
           </button>
         )}
       </div>
 
       {error ? (
-        <div className="text-center space-y-4 flex-1 flex flex-col items-center justify-center">
+        <div className="text-center space-y-4">
           <p className="text-destructive">{error}</p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Retry
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col space-y-4 flex-1 min-h-0">
+        <>
           <div 
             id="qr-reader" 
-            className="rounded-lg overflow-hidden border-2 border-primary w-full"
-            style={{ maxHeight: '400px' }}
+            className="rounded-lg overflow-hidden border-2 border-primary"
           />
-          <p className="text-sm text-muted-foreground text-center shrink-0">
+          <p className="text-sm text-muted-foreground text-center">
             Position the QR code within the frame to scan
           </p>
-        </div>
+        </>
       )}
     </Card>
   );
