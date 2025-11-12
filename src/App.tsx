@@ -9,6 +9,7 @@ import Services from "./components/Services";
 import WithdrawFlow from "./components/WithdrawFlow";
 import DepositFlow from "./components/DepositFlow";
 import PaymentHistory from "./components/PaymentHistory";
+import Profile from "./components/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/withdraw" element={<WithdrawFlow />} />
           <Route path="/deposit" element={<DepositFlow />} />
           <Route path="/history" element={<PaymentHistory />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
