@@ -13,10 +13,26 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   const [error, setError] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
+  const isMounted = useRef(true);
+
+  const stopScanner = async () => {
+    if (scannerRef.current && isScanning.current) {
+      try {
+        await scannerRef.current.stop();
+        await scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (err) {
+        console.error("Error stopping scanner:", err);
+      }
+      isScanning.current = false;
+    }
+  };
 
   useEffect(() => {
+    isMounted.current = true;
+
     const startScanner = async () => {
-      if (isScanning.current) return;
+      if (isScanning.current || !isMounted.current) return;
       
       try {
         const html5QrCode = new Html5Qrcode("qr-reader");
@@ -30,8 +46,10 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            onScanSuccess(decodedText);
-            stopScanner();
+            if (isMounted.current) {
+              onScanSuccess(decodedText);
+              stopScanner();
+            }
           },
           (errorMessage) => {
             // Ignore common scanning errors
@@ -39,19 +57,9 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           }
         );
       } catch (err) {
-        setError("Unable to access camera. Please grant camera permissions.");
-        console.error("Error starting scanner:", err);
-        isScanning.current = false;
-      }
-    };
-
-    const stopScanner = async () => {
-      if (scannerRef.current && isScanning.current) {
-        try {
-          await scannerRef.current.stop();
-          scannerRef.current.clear();
-        } catch (err) {
-          console.error("Error stopping scanner:", err);
+        if (isMounted.current) {
+          setError("Unable to access camera. Please grant camera permissions.");
+          console.error("Error starting scanner:", err);
         }
         isScanning.current = false;
       }
@@ -60,6 +68,7 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
     startScanner();
 
     return () => {
+      isMounted.current = false;
       stopScanner();
     };
   }, [onScanSuccess]);
@@ -69,7 +78,13 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">Scan QR Code</h2>
         {onClose && (
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button 
+            onClick={() => {
+              stopScanner();
+              onClose();
+            }} 
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="h-6 w-6" />
           </button>
         )}
