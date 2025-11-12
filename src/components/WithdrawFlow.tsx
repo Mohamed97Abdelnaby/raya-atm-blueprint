@@ -24,10 +24,6 @@ const WithdrawFlow = () => {
       });
       return;
     }
-    setStep("confirm");
-  };
-
-  const handleConfirm = () => {
     setStep("scan");
   };
 
@@ -37,29 +33,35 @@ const WithdrawFlow = () => {
       title: "QR Code Scanned",
       description: "ATM verified successfully",
     });
-    
+    setStep("confirm");
+  };
+
+  const handleConfirm = () => {
     // Simulate processing
-    setTimeout(() => {
-      toast({
-        title: "Withdrawal Successful",
-        description: `EGP ${amount} has been withdrawn`,
-      });
-      setStep("success");
-    }, 1000);
+    toast({
+      title: "Withdrawal Successful",
+      description: `EGP ${amount} has been withdrawn`,
+    });
+    setStep("success");
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="bg-gradient-to-r from-primary to-secondary text-white p-6 flex items-center gap-4">
-        <button onClick={() => step === "amount" ? navigate("/services") : setStep("amount")}>
+        <button onClick={() => {
+          if (step === "amount") navigate("/services");
+          else if (step === "scan") setStep("amount");
+          else if (step === "confirm") setStep("scan");
+          else setStep("amount");
+        }}>
           <ArrowLeft className="h-6 w-6" />
         </button>
         <div>
           <h1 className="text-xl font-bold">Withdraw Cash</h1>
           <p className="text-sm opacity-90">
             {step === "amount" && "Enter Amount"}
-            {step === "confirm" && "Review Transaction"}
             {step === "scan" && "Scan ATM QR Code"}
+            {step === "confirm" && "Review Transaction"}
             {step === "success" && "Withdrawal Complete"}
           </p>
         </div>
@@ -103,6 +105,13 @@ const WithdrawFlow = () => {
           </Card>
         )}
 
+        {step === "scan" && (
+          <QRScanner 
+            onScanSuccess={handleScanSuccess}
+            onClose={() => setStep("amount")}
+          />
+        )}
+
         {step === "confirm" && (
           <Card className="p-8 space-y-6">
             <h2 className="text-2xl font-bold text-foreground text-center">Confirm Withdrawal</h2>
@@ -118,7 +127,7 @@ const WithdrawFlow = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">ATM ID</span>
-                <span className="font-medium text-foreground">#4521</span>
+                <span className="font-medium text-foreground">{qrCodeValue || "N/A"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date</span>
@@ -127,16 +136,9 @@ const WithdrawFlow = () => {
             </div>
 
             <Button onClick={handleConfirm} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Continue to ATM
+              Confirm Withdrawal
             </Button>
           </Card>
-        )}
-
-        {step === "scan" && (
-          <QRScanner 
-            onScanSuccess={handleScanSuccess}
-            onClose={() => setStep("confirm")}
-          />
         )}
 
         {step === "success" && (
