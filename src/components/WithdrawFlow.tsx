@@ -36,13 +36,45 @@ const WithdrawFlow = () => {
     setStep("confirm");
   };
 
-  const handleConfirm = () => {
-    // Simulate processing
-    toast({
-      title: "Withdrawal Successful",
-      description: `EGP ${amount} has been withdrawn`,
-    });
-    setStep("success");
+  const handleConfirm = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      
+      const response = await fetch("https://localhost:7199/api/Home/withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          trans_type: "WITHD",
+          trans_amount: parseFloat(amount),
+          terminal_id: qrCodeValue,
+          User_Id: userId ? parseInt(userId) : null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: data.message || "Withdrawal Successful",
+          description: `EGP ${data.amount || amount}`,
+        });
+        setStep("success");
+      } else {
+        toast({
+          title: data.message || "Withdrawal Failed",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process withdrawal. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -68,6 +68,9 @@ const Registration = () => {
   };
 
   const handleOTPSuccess = () => {
+    if (userId) {
+      localStorage.setItem("userId", userId.toString());
+    }
     navigate("/services");
   };
 
