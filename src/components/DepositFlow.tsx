@@ -11,8 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 const DepositFlow = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [step, setStep] = useState<"amount" | "scan" | "insertCash" | "confirm" | "success">("amount");
-  const [amount, setAmount] = useState("");
+  const [step, setStep] = useState<"amount" | "scan" | "insertCash" | "confirm" | "success">("scan");
   const [qrCodeValue, setQrCodeValue] = useState<string>("");
   const [transactionId, setTransactionId] = useState<string>("");
   const [totalCash, setTotalCash] = useState<string>("");
@@ -25,17 +24,6 @@ const DepositFlow = () => {
     setUserPhone(phone);
   }, []);
 
-  const handleAmountSubmit = () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    setStep("scan");
-  };
 
   const handleScanSuccess = async (decodedText: string) => {
     setQrCodeValue(decodedText);
@@ -50,7 +38,7 @@ const DepositFlow = () => {
       const { data, error } = await supabase.functions.invoke('atm-deposit', {
         body: {
           action: 'STARTCASHIN',
-          amount: parseFloat(amount),
+          amount: 0,
           atmId: decodedText,
           userPhone
         }
@@ -146,8 +134,7 @@ const DepositFlow = () => {
         title: "Refunded",
         description: data.message,
       });
-      setStep("amount");
-      setAmount("");
+      setStep("scan");
       setTotalCash("");
     } catch (error) {
       toast({
@@ -202,7 +189,6 @@ const DepositFlow = () => {
         <div>
           <h1 className="text-xl font-bold">Deposit Cash</h1>
           <p className="text-sm opacity-90">
-            {step === "amount" && "Enter Amount"}
             {step === "scan" && "Scan ATM QR Code"}
             {step === "insertCash" && "Insert Cash"}
             {step === "confirm" && "Confirm Amount"}
@@ -212,34 +198,10 @@ const DepositFlow = () => {
       </header>
 
       <main className="p-6 animate-fade-in">
-        {step === "amount" && (
-          <Card className="p-8 space-y-6">
-            <div className="text-center">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">How much to deposit?</h2>
-            </div>
-
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Enter Amount (EGP)</label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-2xl font-bold text-center border-border focus-visible:ring-primary"
-              />
-            </div>
-
-            <Button onClick={handleAmountSubmit} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Continue
-            </Button>
-          </Card>
-        )}
-
         {step === "scan" && (
           <QRScanner 
             onScanSuccess={handleScanSuccess}
-            onClose={() => setStep("amount")}
+            onClose={() => navigate("/services")}
           />
         )}
 
@@ -250,7 +212,6 @@ const DepositFlow = () => {
             <div className="bg-muted rounded-lg p-6 text-center">
               <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 animate-pulse" />
               <p className="text-sm text-muted-foreground mb-2">Shutter opened. Please insert cash</p>
-              <p className="text-3xl font-bold text-foreground">EGP {amount}</p>
             </div>
 
             <div className="space-y-2 text-sm text-muted-foreground">
