@@ -10,18 +10,18 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userData, setUserData] = useState<{
-    name: string;
-    phone: string;
-    email?: string;
-    national_id?: string;
+    fullName: string;
+    phoneNumber: string;
+    createdAt?: string;
+    lastLogin?: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const phone = localStorage.getItem('userPhone');
-        if (!phone) {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
           toast({
             title: "Error",
             description: "User not found. Please register again.",
@@ -31,14 +31,19 @@ const Profile = () => {
           return;
         }
 
-        const { data, error } = await supabase
-          .from('registrations')
-          .select('name, phone, email, national_id')
-          .eq('phone', phone)
-          .single();
+        const response = await fetch('https://localhost:7199/api/Home/Profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
 
+        const data = await response.json();
         setUserData(data);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -80,7 +85,7 @@ const Profile = () => {
                   <UserIcon className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">{userData.name}</h2>
+                  <h2 className="text-xl font-bold text-foreground">{userData.fullName}</h2>
                   <p className="text-sm text-muted-foreground">Raya User</p>
                 </div>
               </div>
@@ -90,26 +95,26 @@ const Profile = () => {
                   <Phone className="h-5 w-5 text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">Phone Number</p>
-                    <p className="font-medium text-foreground">{userData.phone}</p>
+                    <p className="font-medium text-foreground">{userData.phoneNumber}</p>
                   </div>
                 </div>
 
-                {userData.email && (
+                {userData.lastLogin && (
                   <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
                     <Mail className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="font-medium text-foreground">{userData.email}</p>
+                      <p className="text-xs text-muted-foreground">Last Login</p>
+                      <p className="font-medium text-foreground">{new Date(userData.lastLogin).toLocaleString()}</p>
                     </div>
                   </div>
                 )}
 
-                {userData.national_id && (
+                {userData.createdAt && (
                   <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
                     <CreditCard className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-xs text-muted-foreground">National ID</p>
-                      <p className="font-medium text-foreground">{userData.national_id}</p>
+                      <p className="text-xs text-muted-foreground">Member Since</p>
+                      <p className="font-medium text-foreground">{new Date(userData.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                 )}
