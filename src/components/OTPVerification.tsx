@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { X } from "lucide-react";
 import Confetti from "react-confetti";
 
@@ -42,19 +41,35 @@ const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) =>
       return;
     }
 
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please register again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone,
-          otp: otpValue,
+      const response = await fetch('https://prod.rayaswteam.com:1443/api/Home/VerifyOtp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          UserId: userId,
+          OTP: otpValue,
+        }),
       });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to verify OTP');
       }
 
-      if (data?.success) {
+      const data = await response.json();
+
+      if (data?.message === "OTP verified successfully") {
         // Store user phone in localStorage for future use
         localStorage.setItem("user_phone", phone);
         
