@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,18 @@ interface OTPVerificationProps {
 const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleOTPChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -99,6 +110,69 @@ const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) =>
     }
   };
 
+  const handleResendOTP = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID not found. Please register again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResending(true);
+
+    try {
+      const response = await fetch('https://prod.rayaswteam.com:1443/api/Home/ResendOtp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          UserId: userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resend OTP');
+      }
+
+      const data = await response.json();
+
+      if (data?.message === "OTP verified successfully") {
+        // Clear OTP inputs
+        setOtp(["", "", "", "", "", ""]);
+        
+        // Start cooldown
+        setResendCooldown(30);
+        
+        toast({
+          title: "OTP Resent",
+          description: "A new code has been sent to your WhatsApp",
+        });
+        
+        // Focus first input
+        document.getElementById('otp-0')?.focus();
+      } else {
+        toast({
+          title: "Resend Failed",
+          description: "Could not resend OTP. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      toast({
+        title: "Resend Failed",
+        description: error.message || "Failed to resend OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <>
       {showConfetti && <Confetti recycle={false} numberOfPieces={500} />}
@@ -138,9 +212,18 @@ const OTPVerification = ({ onSuccess, onClose, phone }: OTPVerificationProps) =>
             Verify
           </Button>
 
-          <button className="w-full text-center text-sm text-muted-foreground mt-4 hover:text-primary">
-            Resend OTP
-          </button>
+          <Button
+            onClick={handleResendOTP}
+            disabled={isResending || resendCooldown > 0}
+            variant="ghost"
+            className="w-full text-sm mt-4"
+          >
+            {isResending
+              ? "Sending..."
+              : resendCooldown > 0
+              ? `Resend OTP (${resendCooldown}s)`
+              : "Resend OTP"}
+          </Button>
         </div>
       </div>
     </>
