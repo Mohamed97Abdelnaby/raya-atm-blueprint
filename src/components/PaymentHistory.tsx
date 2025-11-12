@@ -2,17 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
-  id: string;
-  transaction_type: string;
+  id: number;
+  userId: number;
+  type: string;
   amount: number;
-  created_at: string;
-  atm_number: string | null;
-  status: string;
-  description: string | null;
+  createdAt: string;
 }
 
 const PaymentHistory = () => {
@@ -20,14 +17,11 @@ const PaymentHistory = () => {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userPhone, setUserPhone] = useState<string>("");
 
   useEffect(() => {
-    // Get user phone from localStorage (stored after successful OTP verification)
-    const phone = localStorage.getItem("user_phone");
-    if (phone) {
-      setUserPhone(phone);
-      fetchTransactions(phone);
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      fetchTransactions(userId);
     } else {
       setLoading(false);
       toast({
@@ -39,17 +33,26 @@ const PaymentHistory = () => {
     }
   }, [navigate, toast]);
 
-  const fetchTransactions = async (phone: string) => {
+  const fetchTransactions = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_phone", phone)
-        .order("created_at", { ascending: false });
+      const response = await fetch('https://localhost:7199/api/Home/UserTransactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions');
+      }
 
-      setTransactions(data || []);
+      const data = await response.json();
+      // Sort by createdAt descending (most recent first)
+      const sortedData = data.sort((a: Transaction, b: Transaction) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setTransactions(sortedData);
     } catch (error: any) {
       console.error("Error fetching transactions:", error);
       toast({
@@ -101,11 +104,11 @@ const PaymentHistory = () => {
             <Card key={transaction.id} className="p-4 hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  transaction.transaction_type === "withdraw" 
+                  transaction.type === "Withdrawal" 
                     ? "bg-primary/10" 
                     : "bg-green-500/10"
                 }`}>
-                  {transaction.transaction_type === "withdraw" ? (
+                  {transaction.type === "Withdrawal" ? (
                     <ArrowDownToLine className="h-6 w-6 text-primary" />
                   ) : (
                     <ArrowUpFromLine className="h-6 w-6 text-green-500" />
@@ -113,23 +116,18 @@ const PaymentHistory = () => {
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground capitalize">{transaction.transaction_type}</p>
+                  <p className="font-semibold text-foreground">{transaction.type}</p>
                   <p className="text-sm text-muted-foreground">
-                    {formatDate(transaction.created_at)} • {formatTime(transaction.created_at)}
-                    {transaction.atm_number && ` • ATM ${transaction.atm_number}`}
+                    {formatDate(transaction.createdAt)} • {formatTime(transaction.createdAt)}
                   </p>
-                  {transaction.description && (
-                    <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>
-                  )}
                 </div>
 
                 <div className="text-right">
                   <p className={`text-lg font-bold ${
-                    transaction.transaction_type === "withdraw" ? "text-primary" : "text-green-500"
+                    transaction.type === "Withdrawal" ? "text-primary" : "text-green-500"
                   }`}>
-                    {transaction.transaction_type === "withdraw" ? "-" : "+"}EGP {transaction.amount}
+                    {transaction.type === "Withdrawal" ? "-" : "+"}EGP {transaction.amount}
                   </p>
-                  <p className="text-xs text-muted-foreground capitalize">{transaction.status}</p>
                 </div>
               </div>
             </Card>
