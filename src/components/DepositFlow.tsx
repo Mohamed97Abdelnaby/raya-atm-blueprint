@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,7 +25,7 @@ const DepositFlow = () => {
   }, []);
 
 
-  const handleScanSuccess = async (decodedText: string) => {
+  const handleScanSuccess = useCallback(async (decodedText: string) => {
     setQrCodeValue(decodedText);
     toast({
       title: "QR Code Scanned",
@@ -61,7 +61,7 @@ const DepositFlow = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [userPhone, toast]);
 
   const handleContinueInsert = async () => {
     setIsProcessing(true);

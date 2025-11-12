@@ -13,10 +13,13 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   const [error, setError] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanning = useRef(false);
+  const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
+    
     const startScanner = async () => {
-      if (isScanning.current) return;
+      if (isScanning.current || !isMounted.current) return;
       
       try {
         const html5QrCode = new Html5Qrcode("qr-reader");
@@ -30,7 +33,9 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
             qrbox: { width: 250, height: 250 },
           },
           (decodedText) => {
-            onScanSuccess(decodedText);
+            if (isMounted.current) {
+              onScanSuccess(decodedText);
+            }
             stopScanner();
           },
           (errorMessage) => {
@@ -39,7 +44,9 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           }
         );
       } catch (err) {
-        setError("Unable to access camera. Please grant camera permissions.");
+        if (isMounted.current) {
+          setError("Unable to access camera. Please grant camera permissions.");
+        }
         console.error("Error starting scanner:", err);
         isScanning.current = false;
       }
@@ -49,7 +56,8 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
       if (scannerRef.current && isScanning.current) {
         try {
           await scannerRef.current.stop();
-          scannerRef.current.clear();
+          await scannerRef.current.clear();
+          scannerRef.current = null;
         } catch (err) {
           console.error("Error stopping scanner:", err);
         }
@@ -60,9 +68,10 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
     startScanner();
 
     return () => {
+      isMounted.current = false;
       stopScanner();
     };
-  }, [onScanSuccess]);
+  }, []);
 
   return (
     <Card className="p-6 space-y-4">
