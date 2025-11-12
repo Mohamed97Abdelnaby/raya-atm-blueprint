@@ -178,7 +178,7 @@ const DepositFlow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 overflow-hidden">
       <header className="bg-gradient-to-r from-primary to-secondary text-white p-6 flex items-center gap-4">
         <button onClick={handleCancel} disabled={isProcessing}>
           <ArrowLeft className="h-6 w-6" />
@@ -194,7 +194,7 @@ const DepositFlow = () => {
         </div>
       </header>
 
-      <main className="p-6 animate-fade-in">
+      <main className="p-6 animate-fade-in overflow-y-auto" style={{ maxHeight: 'calc(100vh - 9rem)' }}>
         {step === "scan" && (
           <QRScanner 
             onScanSuccess={handleScanSuccess}

@@ -74,8 +74,8 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   }, [onScanSuccess]);
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <Card className="p-6 space-y-4 max-h-[calc(100vh-12rem)] flex flex-col">
+      <div className="flex items-center justify-between shrink-0">
         <h2 className="text-xl font-bold text-foreground">Scan QR Code</h2>
         {onClose && (
           <button 
@@ -91,22 +91,23 @@ const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
       </div>
 
       {error ? (
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 flex-1 flex flex-col items-center justify-center">
           <p className="text-destructive">{error}</p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Retry
           </Button>
         </div>
       ) : (
-        <>
+        <div className="flex flex-col space-y-4 flex-1 min-h-0">
           <div 
             id="qr-reader" 
-            className="rounded-lg overflow-hidden border-2 border-primary"
+            className="rounded-lg overflow-hidden border-2 border-primary w-full"
+            style={{ maxHeight: '400px' }}
           />
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-sm text-muted-foreground text-center shrink-0">
             Position the QR code within the frame to scan
           </p>
-        </>
+        </div>
       )}
     </Card>
   );
