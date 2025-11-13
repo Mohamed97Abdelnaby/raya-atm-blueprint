@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import QRScanner from "./QRScanner";
 
 const WithdrawFlow = () => {
@@ -14,6 +14,7 @@ const WithdrawFlow = () => {
   const [amount, setAmount] = useState("");
   const [account, setAccount] = useState("Main Account ****1234");
   const [qrCodeValue, setQrCodeValue] = useState<string>("");
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const handleAmountSubmit = () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -37,6 +38,7 @@ const WithdrawFlow = () => {
   };
 
   const handleConfirm = async () => {
+    setIsConfirming(true);
     try {
       const userId = localStorage.getItem("userId");
       
@@ -74,6 +76,8 @@ const WithdrawFlow = () => {
         description: "Failed to process withdrawal. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -167,8 +171,19 @@ const WithdrawFlow = () => {
               </div>
             </div>
 
-            <Button onClick={handleConfirm} className="w-full bg-gradient-to-r from-primary to-secondary text-white">
-              Confirm Withdrawal
+            <Button 
+              onClick={handleConfirm} 
+              disabled={isConfirming}
+              className="w-full bg-gradient-to-r from-primary to-secondary text-white"
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Withdrawal"
+              )}
             </Button>
           </Card>
         )}
